@@ -26,7 +26,7 @@ class Product(models.Model):
     image = models.ImageField(null=True, blank=True, upload_to='uploads/')
     old_price = models.FloatField(default=100.00)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True, related_name='products')
-    slug = models.SlugField(default=None)
+    slug = models.SlugField(default=None, null=True, blank=True)
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, unique=True)
     inventory = models.IntegerField(default=5)
     top_deal=models.BooleanField(default=False)
@@ -50,40 +50,60 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-class Cart(models.Model):
-    owner = models.ForeignKey(Customer, on_delete=models.CASCADE, null = True, blank=True)
-    cart_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-    created = models.DateTimeField(auto_now_add=True)
-    completed = models.BooleanField(default=False)
-    session_id = models.CharField(max_length=100)
-    
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='uploads',default='', null=True, blank=True)
 
-    @property
-    def num_of_items(self):
-        cartitems = self.cartitems_set.all()
-        qtysum = sum([ qty.quantity for qty in cartitems])
-        return qtysum
-    
-    @property
-    def cart_total(self):
-        cartitems = self.cartitems_set.all()
-        qtysum = sum([ qty.subTotal for qty in cartitems])
-        return qtysum
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    date_created = models.DateTimeField(auto_now_add=True)
+    description = models.TextField()
+    name = models.CharField(max_length=50)
 
     def __str__(self):
-        return str(self.cart_id)
+        return self.description
+
+
+class Cart(models.Model):
+    # owner = models.ForeignKey(Customer, on_delete=models.CASCADE, null = True, blank=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    created = models.DateTimeField(auto_now_add=True)
+    # completed = models.BooleanField(default=False)
+    # session_id = models.CharField(max_length=100)
+    
+
+    # @property
+    # def num_of_items(self):
+    #     cartitems = self.cartitems_set.all()
+    #     qtysum = sum([ qty.quantity for qty in cartitems])
+    #     return qtysum
+    
+    # @property
+    # def cart_total(self):
+    #     cartitems = self.cartitems_set.all()
+    #     qtysum = sum([ qty.subTotal for qty in cartitems])
+    #     return qtysum
+
+    def __str__(self):
+        return str(self.id)
 
 class Cartitems(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, blank=True, null=True)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, blank=True, null=True, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True, related_name='cartitems')
     quantity = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name_plural = 'CartItems'
     
     
-    @property
-    def subTotal(self):
-        total = self.quantity * self.product.price
+    # @property
+    # def subTotal(self):
+    #     total = self.quantity * self.product.price
         
-        return total
+    #     return total
+    # def __str__(self):
+    #     return self.product
     
    
 
